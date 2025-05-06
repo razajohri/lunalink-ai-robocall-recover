@@ -17,7 +17,7 @@ const Sidebar = () => {
     {
       name: 'Dashboard',
       icon: <LayoutDashboard size={20} />,
-      href: '/',
+      href: '/dashboard',
     },
     {
       name: 'Voice Agents',
@@ -45,9 +45,7 @@ const Sidebar = () => {
     <div className="h-screen bg-white border-r border-gray-200 w-64 flex flex-col">
       <div className="p-6">
         <div className="flex items-center">
-          <div className="w-8 h-8 rounded-full luna-gradient flex items-center justify-center">
-            <span className="text-white font-bold">L</span>
-          </div>
+          <img src="/lovable-uploads/354da74a-8510-41f7-9021-e86ef760aab2.png" alt="LunaLink AI" className="h-8 w-auto" />
           <h1 className="ml-2 text-xl font-semibold">LunaLink AI</h1>
         </div>
       </div>
@@ -60,8 +58,8 @@ const Sidebar = () => {
             className={cn(
               "flex items-center px-6 py-3 text-sm font-medium transition-colors",
               location.pathname === item.href
-                ? "text-luna-purple bg-gray-100"
-                : "text-gray-600 hover:text-luna-purple hover:bg-gray-50"
+                ? "text-primary bg-gray-100"
+                : "text-gray-600 hover:text-primary hover:bg-gray-50"
             )}
           >
             <div className="mr-3 text-current">{item.icon}</div>

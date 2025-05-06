@@ -94,6 +94,25 @@ const CreateAgentModal: React.FC<CreateAgentModalProps> = ({ children, onCreateA
     });
   };
 
+  const getDefaultMessage = (triggerType: string) => {
+    switch(triggerType) {
+      case 'abandoned-cart':
+        return "Hi there! I noticed you left some items in your cart. Would you like to complete your purchase or do you have any questions I can help with?";
+      case 'order-follow-up':
+        return "Hello! I'm calling about your recent order from our store. We wanted to make sure everything arrived as expected. How satisfied are you with your purchase?";
+      case 'order-cancellation':
+        return "Hello, I'm calling regarding your recent order cancellation. I'd like to understand if there's anything we could have done better or if you'd like help with finding an alternative product.";
+      case 'order-confirmation':
+        return "Hello! I'm calling to confirm that your order has been successfully processed and is being prepared for shipping. Would you like me to provide you with your tracking information?";
+      case 'product-recommendation':
+        return "Hello! Based on your previous purchases, we thought you might be interested in some new products that have just arrived. Would you like me to tell you about them?";
+      case 'inbound-service':
+        return "Hello and thank you for contacting our customer service. I'm here to assist you with any questions or concerns you may have. How can I help you today?";
+      default:
+        return "Hello, this is an automated call from our store. How may I assist you today?";
+    }
+  };
+
   const renderStep = () => {
     switch (currentStep) {
       case 0:
@@ -160,7 +179,10 @@ const CreateAgentModal: React.FC<CreateAgentModalProps> = ({ children, onCreateA
               <Label>Trigger</Label>
               <Select 
                 value={formData.triggerType}
-                onValueChange={(value) => handleChange('triggerType', value)}
+                onValueChange={(value) => {
+                  handleChange('triggerType', value);
+                  handleChange('message', getDefaultMessage(value));
+                }}
               >
                 <SelectTrigger>
                   <SelectValue placeholder="Select a trigger" />
@@ -168,6 +190,10 @@ const CreateAgentModal: React.FC<CreateAgentModalProps> = ({ children, onCreateA
                 <SelectContent>
                   <SelectItem value="abandoned-cart">Abandoned Cart</SelectItem>
                   <SelectItem value="order-follow-up">Order Follow-up</SelectItem>
+                  <SelectItem value="order-cancellation">Order Cancellation</SelectItem>
+                  <SelectItem value="order-confirmation">Order Confirmation</SelectItem>
+                  <SelectItem value="product-recommendation">Product Recommendation</SelectItem>
+                  <SelectItem value="inbound-service">Customer Service</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -182,7 +208,7 @@ const CreateAgentModal: React.FC<CreateAgentModalProps> = ({ children, onCreateA
                 onChange={(e) => handleChange('triggerDelay', e.target.value)}
               />
               <p className="text-sm text-muted-foreground">
-                How long to wait after cart abandonment before calling
+                How long to wait after trigger event before calling
               </p>
             </div>
           </div>
@@ -219,7 +245,11 @@ const CreateAgentModal: React.FC<CreateAgentModalProps> = ({ children, onCreateA
             <div className="space-y-1">
               <p className="font-medium">Trigger</p>
               <p className="text-sm">
-                {formData.triggerType === 'abandoned-cart' ? 'Abandoned Cart' : 'Order Follow-up'} 
+                {formData.triggerType === 'abandoned-cart' ? 'Abandoned Cart' : 
+                 formData.triggerType === 'order-follow-up' ? 'Order Follow-up' : 
+                 formData.triggerType === 'order-cancellation' ? 'Order Cancellation' : 
+                 formData.triggerType === 'order-confirmation' ? 'Order Confirmation' : 
+                 formData.triggerType === 'product-recommendation' ? 'Product Recommendation' : 'Customer Service'} 
                 (after {formData.triggerDelay} minutes)
               </p>
             </div>
@@ -254,7 +284,7 @@ const CreateAgentModal: React.FC<CreateAgentModalProps> = ({ children, onCreateA
           {steps.map((_, index) => (
             <div 
               key={index} 
-              className={`h-2 flex-1 mx-1 rounded-full ${index <= currentStep ? 'bg-luna-purple' : 'bg-gray-200'}`} 
+              className={`h-2 flex-1 mx-1 rounded-full ${index <= currentStep ? 'bg-primary' : 'bg-gray-200'}`} 
             />
           ))}
         </div>
