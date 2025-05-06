@@ -1,14 +1,23 @@
-// Update this page (the content is just a fallback if you fail to update the page)
+
+import React, { useState } from 'react';
+import { Navigate } from 'react-router-dom';
+import Welcome from '@/components/onboarding/Welcome';
 
 const Index = () => {
-  return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-100">
-      <div className="text-center">
-        <h1 className="text-4xl font-bold mb-4">Welcome to Your Blank App</h1>
-        <p className="text-xl text-gray-600">Start building your amazing project here!</p>
-      </div>
-    </div>
-  );
+  const [onboarded, setOnboarded] = useState(false);
+  
+  const handleGetStarted = () => {
+    // In a real app, we would make an API call to record onboarding status
+    setOnboarded(true);
+  };
+  
+  // If onboarded, redirect to dashboard
+  if (onboarded) {
+    return <Navigate to="/dashboard" replace />;
+  }
+  
+  // Show welcome/onboarding screen
+  return <Welcome onGetStarted={handleGetStarted} />;
 };
 
 export default Index;

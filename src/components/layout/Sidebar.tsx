@@ -1,0 +1,85 @@
+
+import React from 'react';
+import { Link, useLocation } from 'react-router-dom';
+import { cn } from '@/lib/utils';
+import { 
+  LayoutDashboard, 
+  Phone, 
+  Clock, 
+  BarChart, 
+  Settings
+} from 'lucide-react';
+
+const Sidebar = () => {
+  const location = useLocation();
+  
+  const navItems = [
+    {
+      name: 'Dashboard',
+      icon: <LayoutDashboard size={20} />,
+      href: '/',
+    },
+    {
+      name: 'Voice Agents',
+      icon: <Phone size={20} />,
+      href: '/voice-agents',
+    },
+    {
+      name: 'Call Logs',
+      icon: <Clock size={20} />,
+      href: '/call-logs',
+    },
+    {
+      name: 'Analytics',
+      icon: <BarChart size={20} />,
+      href: '/analytics',
+    },
+    {
+      name: 'Settings',
+      icon: <Settings size={20} />,
+      href: '/settings',
+    },
+  ];
+
+  return (
+    <div className="h-screen bg-white border-r border-gray-200 w-64 flex flex-col">
+      <div className="p-6">
+        <div className="flex items-center">
+          <div className="w-8 h-8 rounded-full luna-gradient flex items-center justify-center">
+            <span className="text-white font-bold">L</span>
+          </div>
+          <h1 className="ml-2 text-xl font-semibold">LunaLink AI</h1>
+        </div>
+      </div>
+      
+      <nav className="flex-1 pt-4">
+        {navItems.map((item, index) => (
+          <Link
+            to={item.href}
+            key={index}
+            className={cn(
+              "flex items-center px-6 py-3 text-sm font-medium transition-colors",
+              location.pathname === item.href
+                ? "text-luna-purple bg-gray-100"
+                : "text-gray-600 hover:text-luna-purple hover:bg-gray-50"
+            )}
+          >
+            <div className="mr-3 text-current">{item.icon}</div>
+            {item.name}
+          </Link>
+        ))}
+      </nav>
+      
+      <div className="p-4 border-t border-gray-200 mt-auto">
+        <div className="bg-gray-50 p-3 rounded-md">
+          <div className="flex items-center">
+            <span className="text-gray-600 flex-1 text-sm">Shopify Store</span>
+            <span className="inline-flex items-center rounded-full bg-green-100 px-2 py-1 text-xs font-medium text-green-700">Connected</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export default Sidebar;
