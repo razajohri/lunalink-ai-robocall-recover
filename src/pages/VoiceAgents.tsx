@@ -1,6 +1,6 @@
-
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
+import { Phone } from 'lucide-react';
 import AgentCard from '@/components/voice-agents/AgentCard';
 import CreateAgentModal from '@/components/voice-agents/CreateAgentModal';
 import { toast } from '@/components/ui/use-toast';
