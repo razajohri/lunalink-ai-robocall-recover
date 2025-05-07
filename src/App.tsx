@@ -11,6 +11,7 @@ import VoiceAgents from "./pages/VoiceAgents";
 import CallLogs from "./pages/CallLogs";
 import Analytics from "./pages/Analytics";
 import Settings from "./pages/Settings";
+import KnowledgeBase from "./pages/KnowledgeBase";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -27,6 +28,7 @@ const App = () => (
             <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/voice-agents" element={<VoiceAgents />} />
             <Route path="/call-logs" element={<CallLogs />} />
+            <Route path="/knowledge-base" element={<KnowledgeBase />} />
             <Route path="/analytics" element={<Analytics />} />
             <Route path="/settings" element={<Settings />} />
           </Route>
