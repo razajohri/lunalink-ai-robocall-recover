@@ -8,7 +8,8 @@ import {
   Clock, 
   BarChart, 
   Settings,
-  Book
+  Book,
+  DollarSign
 } from 'lucide-react';
 
 const Sidebar = () => {
@@ -41,6 +42,11 @@ const Sidebar = () => {
       href: '/analytics',
     },
     {
+      name: 'Billing',
+      icon: <DollarSign size={20} />,
+      href: '/billing',
+    },
+    {
       name: 'Settings',
       icon: <Settings size={20} />,
       href: '/settings',
@@ -48,7 +54,7 @@ const Sidebar = () => {
   ];
 
   return (
-    <div className="h-screen bg-white border-r border-gray-200 w-48 flex flex-col">
+    <div className="h-screen bg-white border-r border-gray-200 w-44 flex flex-col">
       <div className="p-4">
         <div className="flex items-center">
           <img src="/lovable-uploads/354da74a-8510-41f7-9021-e86ef760aab2.png" alt="LunaLink AI" className="h-7 w-auto" />
