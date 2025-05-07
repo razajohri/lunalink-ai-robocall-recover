@@ -7,7 +7,8 @@ import {
   Phone, 
   Clock, 
   BarChart, 
-  Settings
+  Settings,
+  Book
 } from 'lucide-react';
 
 const Sidebar = () => {
@@ -30,6 +31,11 @@ const Sidebar = () => {
       href: '/call-logs',
     },
     {
+      name: 'Knowledge Base',
+      icon: <Book size={20} />,
+      href: '/knowledge-base',
+    },
+    {
       name: 'Analytics',
       icon: <BarChart size={20} />,
       href: '/analytics',
@@ -42,11 +48,11 @@ const Sidebar = () => {
   ];
 
   return (
-    <div className="h-screen bg-white border-r border-gray-200 w-64 flex flex-col">
-      <div className="p-6">
+    <div className="h-screen bg-white border-r border-gray-200 w-56 flex flex-col">
+      <div className="p-5">
         <div className="flex items-center">
-          <img src="/lovable-uploads/354da74a-8510-41f7-9021-e86ef760aab2.png" alt="LunaLink AI" className="h-8 w-auto" />
-          <h1 className="ml-2 text-xl font-semibold">LunaLink AI</h1>
+          <img src="/lovable-uploads/354da74a-8510-41f7-9021-e86ef760aab2.png" alt="LunaLink AI" className="h-7 w-auto" />
+          <h1 className="ml-2 text-lg font-semibold">LunaLink AI</h1>
         </div>
       </div>
       
@@ -56,7 +62,7 @@ const Sidebar = () => {
             to={item.href}
             key={index}
             className={cn(
-              "flex items-center px-6 py-3 text-sm font-medium transition-colors",
+              "flex items-center px-4 py-2 text-sm font-medium transition-colors",
               location.pathname === item.href
                 ? "text-primary bg-gray-100"
                 : "text-gray-600 hover:text-primary hover:bg-gray-50"

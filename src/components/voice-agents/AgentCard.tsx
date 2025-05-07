@@ -12,6 +12,7 @@ interface AgentCardProps {
   trigger: string;
   callCount: number;
   active: boolean;
+  phoneNumber?: string;
   onEdit: (id: string) => void;
   onActivate: (id: string) => void;
   onTestCall: (id: string) => void;
@@ -25,6 +26,7 @@ const AgentCard: React.FC<AgentCardProps> = ({
   trigger,
   callCount,
   active,
+  phoneNumber = "Not specified",
   onEdit,
   onActivate,
   onTestCall
@@ -49,6 +51,10 @@ const AgentCard: React.FC<AgentCardProps> = ({
               <p className="flex items-center">
                 <span className="w-24">Triggers:</span> 
                 {trigger}
+              </p>
+              <p className="flex items-center">
+                <span className="w-24">Phone:</span> 
+                {phoneNumber}
               </p>
               <p className="flex items-center">
                 <span className="w-24">Calls made:</span> 

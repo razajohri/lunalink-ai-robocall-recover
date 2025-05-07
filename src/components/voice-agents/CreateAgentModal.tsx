@@ -22,7 +22,7 @@ import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { Plus } from 'lucide-react';
+import { Plus, Phone } from 'lucide-react';
 
 interface CreateAgentModalProps {
   children?: React.ReactNode;
@@ -38,6 +38,7 @@ const CreateAgentModal: React.FC<CreateAgentModalProps> = ({ children, onCreateA
     voicePersonality: 'friendly',
     triggerType: 'abandoned-cart',
     triggerDelay: '15',
+    phoneNumber: '',
     message: "Hi there! I noticed you left some items in your cart. Would you like to complete your purchase or do you have any questions I can help with?"
   });
 
@@ -53,6 +54,10 @@ const CreateAgentModal: React.FC<CreateAgentModalProps> = ({ children, onCreateA
     {
       title: "Set trigger",
       description: "Define when your agent should make calls.",
+    },
+    {
+      title: "Set phone number",
+      description: "Enter the phone number your agent will call from.",
     },
     {
       title: "Customize message",
@@ -90,6 +95,7 @@ const CreateAgentModal: React.FC<CreateAgentModalProps> = ({ children, onCreateA
       voicePersonality: 'friendly',
       triggerType: 'abandoned-cart',
       triggerDelay: '15',
+      phoneNumber: '',
       message: "Hi there! I noticed you left some items in your cart. Would you like to complete your purchase or do you have any questions I can help with?"
     });
   };
@@ -217,6 +223,28 @@ const CreateAgentModal: React.FC<CreateAgentModalProps> = ({ children, onCreateA
         return (
           <div className="space-y-4 py-4">
             <div className="space-y-2">
+              <Label htmlFor="phone-number">Caller Phone Number</Label>
+              <div className="flex items-center">
+                <div className="mr-3">
+                  <Phone size={20} className="text-gray-500" />
+                </div>
+                <Input 
+                  id="phone-number" 
+                  placeholder="+1 (555) 123-4567" 
+                  value={formData.phoneNumber}
+                  onChange={(e) => handleChange('phoneNumber', e.target.value)}
+                />
+              </div>
+              <p className="text-sm text-muted-foreground">
+                This number will be displayed to customers when they receive a call
+              </p>
+            </div>
+          </div>
+        );
+      case 4:
+        return (
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
               <Label htmlFor="message">Call Script</Label>
               <Textarea 
                 id="message" 
@@ -231,7 +259,7 @@ const CreateAgentModal: React.FC<CreateAgentModalProps> = ({ children, onCreateA
             </div>
           </div>
         );
-      case 4:
+      case 5:
         return (
           <div className="space-y-4 py-4">
             <div className="space-y-1">
@@ -252,6 +280,10 @@ const CreateAgentModal: React.FC<CreateAgentModalProps> = ({ children, onCreateA
                  formData.triggerType === 'product-recommendation' ? 'Product Recommendation' : 'Customer Service'} 
                 (after {formData.triggerDelay} minutes)
               </p>
+            </div>
+            <div className="space-y-1">
+              <p className="font-medium">Phone Number</p>
+              <p className="text-sm">{formData.phoneNumber || "Not specified"}</p>
             </div>
             <div className="space-y-1">
               <p className="font-medium">Call Script</p>

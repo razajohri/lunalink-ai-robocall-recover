@@ -20,7 +20,7 @@ const Welcome: React.FC<WelcomeProps> = ({ onGetStarted }) => {
             </div>
             <h2 className="text-4xl md:text-5xl font-bold text-white leading-tight">
               Recover Abandoned Carts & Automate Customer Service 
-              <span className="text-primary"> with AI Voice Agents</span>
+              <span className="text-primary"> with AI Sales Rep</span>
             </h2>
             <p className="text-xl text-gray-300">
               Boost your sales and improve customer satisfaction with powerful AI voice and messaging agents that work 24/7.
