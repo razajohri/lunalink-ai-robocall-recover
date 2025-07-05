@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import {
@@ -17,135 +17,115 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { Phone, Search, Calendar } from 'lucide-react';
-
-// Mock call data
-const mockCalls = [
-  { 
-    id: '1', 
-    customer: 'John Smith', 
-    email: 'john@example.com', 
-    status: 'completed', 
-    time: 'May 6, 2025 10:23 AM', 
-    duration: '1:38', 
-    result: 'Cart Recovered' 
-  },
-  { 
-    id: '2', 
-    customer: 'Emily Johnson', 
-    email: 'emily@example.com', 
-    status: 'completed', 
-    time: 'May 6, 2025 9:45 AM', 
-    duration: '2:10', 
-    result: 'No Response' 
-  },
-  { 
-    id: '3', 
-    customer: 'Michael Brown', 
-    email: 'michael@example.com', 
-    status: 'failed', 
-    time: 'May 6, 2025 8:30 AM', 
-    duration: '0:12', 
-    result: 'No Answer' 
-  },
-  { 
-    id: '4', 
-    customer: 'Sarah Wilson', 
-    email: 'sarah@example.com', 
-    status: 'in-progress', 
-    time: 'May 6, 2025 7:55 AM', 
-    duration: '--:--', 
-    result: 'Pending' 
-  },
-  { 
-    id: '5', 
-    customer: 'Robert Jones', 
-    email: 'robert@example.com', 
-    status: 'completed', 
-    time: 'May 5, 2025 4:12 PM', 
-    duration: '3:05', 
-    result: 'Cart Recovered' 
-  },
-  { 
-    id: '6', 
-    customer: 'Jennifer Davis', 
-    email: 'jennifer@example.com', 
-    status: 'failed', 
-    time: 'May 5, 2025 2:45 PM', 
-    duration: '0:08', 
-    result: 'Declined Call' 
-  },
-  { 
-    id: '7', 
-    customer: 'David Miller', 
-    email: 'david@example.com', 
-    status: 'completed', 
-    time: 'May 5, 2025 11:30 AM', 
-    duration: '1:46', 
-    result: 'Call Back Later' 
-  },
-  { 
-    id: '8', 
-    customer: 'Lisa Moore', 
-    email: 'lisa@example.com', 
-    status: 'completed', 
-    time: 'May 5, 2025 10:15 AM', 
-    duration: '2:22', 
-    result: 'Cart Recovered' 
-  },
-];
+import { Phone, Search } from 'lucide-react';
+import { useVapi } from '@/contexts/VapiContext';
+import { VapiCall } from '@/services/vapiService';
+import VapiConfig from '@/components/vapi/VapiConfig';
 
 const getStatusClass = (status: string) => {
   switch (status) {
-    case 'completed':
+    case 'ended':
       return 'bg-green-100 text-green-800';
-    case 'failed':
-      return 'bg-red-100 text-red-800';
     case 'in-progress':
       return 'bg-blue-100 text-blue-800';
+    case 'queued':
+    case 'ringing':
+      return 'bg-yellow-100 text-yellow-800';
     default:
       return 'bg-gray-100 text-gray-800';
   }
 };
 
 const CallLogs = () => {
+  const { vapiService, assistantId, isConfigured } = useVapi();
+  const [calls, setCalls] = useState<VapiCall[]>([]);
+  const [filteredCalls, setFilteredCalls] = useState<VapiCall[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
-  const [dateFilter, setDateFilter] = useState<string>('last-7-days');
-  
-  // Filter calls based on search term and filters
-  const filteredCalls = mockCalls.filter(call => {
-    // Search term filter
-    const matchesSearch = searchTerm === '' || 
-      call.customer.toLowerCase().includes(searchTerm.toLowerCase()) || 
-      call.email.toLowerCase().includes(searchTerm.toLowerCase());
+  const [isLoading, setIsLoading] = useState(false);
+
+  const fetchCalls = async () => {
+    if (!vapiService || !assistantId) return;
     
-    // Status filter
-    const matchesStatus = statusFilter === 'all' || call.status === statusFilter;
-    
-    // We would add date filtering logic here in a real implementation
-    
-    return matchesSearch && matchesStatus;
-  });
-  
-  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setSearchTerm(e.target.value);
+    setIsLoading(true);
+    try {
+      const callsData = await vapiService.getCalls(assistantId, 100);
+      setCalls(callsData);
+      setFilteredCalls(callsData);
+    } catch (error) {
+      console.error('Error fetching calls:', error);
+    } finally {
+      setIsLoading(false);
+    }
   };
+
+  useEffect(() => {
+    if (isConfigured) {
+      fetchCalls();
+    }
+  }, [isConfigured, vapiService, assistantId]);
+
+  useEffect(() => {
+    let filtered = calls;
+
+    // Apply search filter
+    if (searchTerm) {
+      filtered = filtered.filter(call => 
+        call.customer.number?.includes(searchTerm) ||
+        call.customer.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        call.customer.email?.toLowerCase().includes(searchTerm.toLowerCase())
+      );
+    }
+
+    // Apply status filter
+    if (statusFilter !== 'all') {
+      filtered = filtered.filter(call => call.status === statusFilter);
+    }
+
+    setFilteredCalls(filtered);
+  }, [calls, searchTerm, statusFilter]);
+
+  const formatCustomerInfo = (call: VapiCall) => {
+    if (call.customer.name) return call.customer.name;
+    if (call.customer.email) return call.customer.email;
+    return call.customer.number || 'Unknown';
+  };
+
+  const getCallResult = (call: VapiCall) => {
+    if (call.status !== 'ended') return 'Pending';
+    if (call.analysis?.successEvaluation === 'success') return 'Success';
+    if (call.duration && call.duration > 30) return 'Completed';
+    return 'No Answer';
+  };
+
+  if (!isConfigured) {
+    return (
+      <div className="space-y-6">
+        <div>
+          <h1 className="text-2xl font-bold">Call Logs</h1>
+          <p className="text-muted-foreground">Configure Vapi to view call logs</p>
+        </div>
+        <div className="flex items-center justify-center min-h-[40vh]">
+          <VapiConfig />
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
       <div>
         <h1 className="text-2xl font-bold">Call Logs</h1>
-        <p className="text-muted-foreground">View and analyze all calls made by your voice agents</p>
+        <p className="text-muted-foreground">View and analyze all calls made by your voice assistant</p>
       </div>
       
       <div className="flex flex-col md:flex-row gap-4">
         <div className="relative flex-grow">
           <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
           <Input
-            placeholder="Search by customer or email"
+            placeholder="Search by customer, phone, or email"
             value={searchTerm}
-            onChange={handleSearchChange}
+            onChange={(e) => setSearchTerm(e.target.value)}
             className="pl-8"
           />
         </div>
@@ -156,27 +136,26 @@ const CallLogs = () => {
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="all">All Statuses</SelectItem>
-            <SelectItem value="completed">Completed</SelectItem>
-            <SelectItem value="failed">Failed</SelectItem>
+            <SelectItem value="ended">Ended</SelectItem>
             <SelectItem value="in-progress">In Progress</SelectItem>
+            <SelectItem value="queued">Queued</SelectItem>
+            <SelectItem value="ringing">Ringing</SelectItem>
           </SelectContent>
         </Select>
         
-        <Select value={dateFilter} onValueChange={setDateFilter}>
-          <SelectTrigger className="w-full md:w-[180px]">
-            <SelectValue placeholder="Date Range" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="today">Today</SelectItem>
-            <SelectItem value="yesterday">Yesterday</SelectItem>
-            <SelectItem value="last-7-days">Last 7 Days</SelectItem>
-            <SelectItem value="last-30-days">Last 30 Days</SelectItem>
-            <SelectItem value="custom">Custom Range</SelectItem>
-          </SelectContent>
-        </Select>
+        <Button onClick={fetchCalls} disabled={isLoading}>
+          {isLoading ? 'Loading...' : 'Refresh'}
+        </Button>
       </div>
       
-      {filteredCalls.length > 0 ? (
+      {isLoading && calls.length === 0 ? (
+        <div className="flex items-center justify-center py-12">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
+            <p>Loading call logs...</p>
+          </div>
+        </div>
+      ) : filteredCalls.length > 0 ? (
         <div className="border rounded-md">
           <Table>
             <TableHeader>
@@ -185,6 +164,7 @@ const CallLogs = () => {
                 <TableHead>Status</TableHead>
                 <TableHead>Time</TableHead>
                 <TableHead>Duration</TableHead>
+                <TableHead>Cost</TableHead>
                 <TableHead>Result</TableHead>
                 <TableHead className="text-right">Action</TableHead>
               </TableRow>
@@ -193,21 +173,32 @@ const CallLogs = () => {
               {filteredCalls.map((call) => (
                 <TableRow key={call.id}>
                   <TableCell>
-                    <div className="font-medium">{call.customer}</div>
-                    <div className="text-sm text-muted-foreground">{call.email}</div>
+                    <div className="font-medium">{formatCustomerInfo(call)}</div>
+                    <div className="text-sm text-muted-foreground">{call.customer.number}</div>
                   </TableCell>
                   <TableCell>
                     <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${getStatusClass(call.status)}`}>
                       {call.status.charAt(0).toUpperCase() + call.status.slice(1)}
                     </span>
                   </TableCell>
-                  <TableCell>{call.time}</TableCell>
-                  <TableCell>{call.duration}</TableCell>
-                  <TableCell>{call.result}</TableCell>
+                  <TableCell>{new Date(call.startedAt).toLocaleString()}</TableCell>
+                  <TableCell>
+                    {call.duration ? vapiService?.formatDuration(call.duration) : '--:--'}
+                  </TableCell>
+                  <TableCell>
+                    {call.cost ? vapiService?.formatCurrency(call.cost) : '--'}
+                  </TableCell>
+                  <TableCell>{getCallResult(call)}</TableCell>
                   <TableCell className="text-right">
-                    <Button variant="ghost" size="sm" disabled={call.status === 'in-progress'}>
-                      Listen
-                    </Button>
+                    {call.recordingUrl && (
+                      <Button 
+                        variant="ghost" 
+                        size="sm"
+                        onClick={() => window.open(call.recordingUrl, '_blank')}
+                      >
+                        Listen
+                      </Button>
+                    )}
                   </TableCell>
                 </TableRow>
               ))}
@@ -216,14 +207,18 @@ const CallLogs = () => {
         </div>
       ) : (
         <div className="flex flex-col items-center justify-center py-12 border border-dashed rounded-lg">
-          <div className="rounded-full bg-luna-purple/10 w-16 h-16 flex items-center justify-center mb-4">
-            <Phone className="h-8 w-8 text-luna-purple" />
+          <div className="rounded-full bg-primary/10 w-16 h-16 flex items-center justify-center mb-4">
+            <Phone className="h-8 w-8 text-primary" />
           </div>
           <h3 className="text-lg font-medium">No calls found</h3>
-          <p className="text-muted-foreground mb-4">No calls match your current filters</p>
-          <Button variant="outline" onClick={() => { setSearchTerm(''); setStatusFilter('all'); setDateFilter('last-7-days'); }}>
-            Reset Filters
-          </Button>
+          <p className="text-muted-foreground mb-4">
+            {calls.length === 0 ? "No calls have been made yet" : "No calls match your current filters"}
+          </p>
+          {calls.length > 0 && (
+            <Button variant="outline" onClick={() => { setSearchTerm(''); setStatusFilter('all'); }}>
+              Reset Filters
+            </Button>
+          )}
         </div>
       )}
     </div>

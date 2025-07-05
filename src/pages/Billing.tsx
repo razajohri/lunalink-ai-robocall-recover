@@ -1,18 +1,48 @@
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { useVapi } from '@/contexts/VapiContext';
+import VapiConfig from '@/components/vapi/VapiConfig';
 
 const Billing = () => {
-  // Mock data - in a real application this would come from your backend
+  const { vapiService, assistantId, isConfigured } = useVapi();
+  const [totalCost, setTotalCost] = useState(0);
+  const [totalMinutes, setTotalMinutes] = useState(0);
+  const [isLoading, setIsLoading] = useState(false);
+
+  const fetchBillingData = async () => {
+    if (!vapiService || !assistantId) return;
+    
+    setIsLoading(true);
+    try {
+      const calls = await vapiService.getCalls(assistantId, 1000); // Get more calls for billing
+      const cost = calls.reduce((sum, call) => sum + (call.cost || 0), 0);
+      const minutes = calls.reduce((sum, call) => sum + (call.duration || 0), 0) / 60; // Convert to minutes
+      
+      setTotalCost(cost);
+      setTotalMinutes(minutes);
+    } catch (error) {
+      console.error('Error fetching billing data:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    if (isConfigured) {
+      fetchBillingData();
+    }
+  }, [isConfigured, vapiService, assistantId]);
+
+  // Mock plan data - in a real app this would come from your backend
   const currentPlan = {
     name: "Business",
-    minutesUsed: 450,
     minutesTotal: 1000,
     price: "$49",
-    nextBillingDate: "June 7, 2025",
+    nextBillingDate: "July 7, 2025",
   };
 
   const plans = [
@@ -21,10 +51,10 @@ const Billing = () => {
       price: "$19",
       minutes: 200,
       features: [
-        "Up to 3 voice agents",
+        "Up to 3 voice assistants",
         "Basic analytics",
         "Email support",
-        "Knowledge base integration",
+        "Call recordings",
       ],
       popular: false
     },
@@ -33,11 +63,11 @@ const Billing = () => {
       price: "$49",
       minutes: 1000,
       features: [
-        "Up to 10 voice agents",
+        "Up to 10 voice assistants",
         "Advanced analytics",
         "Priority support",
         "Custom voice options",
-        "Twilio SMS integration",
+        "Real-time monitoring",
       ],
       popular: true
     },
@@ -46,7 +76,7 @@ const Billing = () => {
       price: "$99",
       minutes: 3000,
       features: [
-        "Unlimited voice agents",
+        "Unlimited voice assistants",
         "Premium analytics",
         "24/7 dedicated support",
         "Custom integrations",
@@ -57,14 +87,33 @@ const Billing = () => {
     }
   ];
 
-  // Calculate usage percentage
-  const usagePercentage = (currentPlan.minutesUsed / currentPlan.minutesTotal) * 100;
+  const usagePercentage = currentPlan.minutesTotal > 0 ? (totalMinutes / currentPlan.minutesTotal) * 100 : 0;
+  const costPerMinute = totalMinutes > 0 ? totalCost / totalMinutes : 0;
+
+  if (!isConfigured) {
+    return (
+      <div className="space-y-8">
+        <div>
+          <h1 className="text-3xl font-bold mb-2">Billing &amp; Usage</h1>
+          <p className="text-gray-500">Configure Vapi to view billing information</p>
+        </div>
+        <div className="flex items-center justify-center min-h-[40vh]">
+          <VapiConfig />
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-8">
-      <div>
-        <h1 className="text-3xl font-bold mb-2">Billing &amp; Usage</h1>
-        <p className="text-gray-500">Manage your subscription and monitor voice minutes usage</p>
+      <div className="flex justify-between items-center">
+        <div>
+          <h1 className="text-3xl font-bold mb-2">Billing &amp; Usage</h1>
+          <p className="text-gray-500">Monitor your AI voice assistant usage and costs</p>
+        </div>
+        <Button onClick={fetchBillingData} disabled={isLoading}>
+          {isLoading ? 'Loading...' : 'Refresh Data'}
+        </Button>
       </div>
 
       {/* Current Usage Card */}
@@ -72,20 +121,33 @@ const Billing = () => {
         <CardHeader>
           <CardTitle>Current Usage</CardTitle>
           <CardDescription>
-            Your voice agent minutes for the current billing cycle
+            Your voice assistant minutes and costs for the current billing cycle
           </CardDescription>
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
-            <div className="flex justify-between items-center">
-              <span className="font-medium">
-                {currentPlan.minutesUsed} / {currentPlan.minutesTotal} minutes used
-              </span>
-              <Badge variant={usagePercentage > 90 ? "destructive" : "default"}>
-                {usagePercentage.toFixed(0)}%
-              </Badge>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <div className="flex justify-between items-center mb-2">
+                  <span className="font-medium">
+                    {totalMinutes.toFixed(1)} / {currentPlan.minutesTotal} minutes used
+                  </span>
+                  <Badge variant={usagePercentage > 90 ? "destructive" : "default"}>
+                    {usagePercentage.toFixed(0)}%
+                  </Badge>
+                </div>
+                <Progress value={usagePercentage} className="h-3" />
+              </div>
+              
+              <div>
+                <div className="text-sm text-gray-500 mb-1">Total Cost</div>
+                <div className="text-2xl font-bold">{vapiService?.formatCurrency(totalCost) || '$0.00'}</div>
+                <div className="text-sm text-gray-500">
+                  Cost per minute: {vapiService?.formatCurrency(costPerMinute) || '$0.00'}
+                </div>
+              </div>
             </div>
-            <Progress value={usagePercentage} className="h-3" />
+            
             <div className="text-sm text-gray-500">
               Next billing date: {currentPlan.nextBillingDate}
             </div>
@@ -97,6 +159,41 @@ const Billing = () => {
             <Button>Upgrade Plan</Button>
           </div>
         </CardFooter>
+      </Card>
+
+      {/* Cost Breakdown */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Cost Breakdown</CardTitle>
+          <CardDescription>
+            Detailed breakdown of your Vapi usage costs
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-4">
+            <div className="flex justify-between items-center p-3 bg-gray-50 rounded-md">
+              <span className="font-medium">Total API Calls Cost</span>
+              <span className="font-bold">{vapiService?.formatCurrency(totalCost) || '$0.00'}</span>
+            </div>
+            
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-4">
+              <div className="text-center">
+                <div className="text-2xl font-bold text-blue-600">{totalMinutes.toFixed(1)}</div>
+                <div className="text-sm text-gray-500">Total Minutes</div>
+              </div>
+              
+              <div className="text-center">
+                <div className="text-2xl font-bold text-green-600">{vapiService?.formatCurrency(costPerMinute) || '$0.00'}</div>
+                <div className="text-sm text-gray-500">Avg Cost/Minute</div>
+              </div>
+              
+              <div className="text-center">
+                <div className="text-2xl font-bold text-purple-600">{vapiService?.formatCurrency(totalCost) || '$0.00'}</div>
+                <div className="text-sm text-gray-500">Total Spent</div>
+              </div>
+            </div>
+          </div>
+        </CardContent>
       </Card>
 
       {/* Current Plan Card */}
@@ -151,7 +248,7 @@ const Billing = () => {
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                <div className="mb-4 font-medium">{plan.minutes} voice minutes</div>
+                <div className="mb-4 font-medium">{plan.minutes} voice minutes included</div>
                 <ul className="space-y-2">
                   {plan.features.map((feature, featureIndex) => (
                     <li key={featureIndex} className="flex items-center text-sm">
@@ -171,36 +268,6 @@ const Billing = () => {
             </Card>
           ))}
         </div>
-      </div>
-
-      {/* Usage History */}
-      <div>
-        <h2 className="text-2xl font-bold mb-4">Usage History</h2>
-        <Card>
-          <CardHeader>
-            <CardTitle>Recent Billing Cycles</CardTitle>
-            <CardDescription>
-              Historical voice agent minutes usage
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              {[
-                { period: "May 2025", usage: 450, total: 1000, percentage: 45 },
-                { period: "April 2025", usage: 780, total: 1000, percentage: 78 },
-                { period: "March 2025", usage: 920, total: 1000, percentage: 92 }
-              ].map((cycle, index) => (
-                <div key={index} className="space-y-2">
-                  <div className="flex justify-between items-center">
-                    <span className="font-medium">{cycle.period}</span>
-                    <span className="text-sm">{cycle.usage} / {cycle.total} minutes</span>
-                  </div>
-                  <Progress value={cycle.percentage} className="h-2" />
-                </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
       </div>
     </div>
   );

@@ -1,77 +1,109 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Phone, BarChart, Clock, DollarSign } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import StatCard from '@/components/dashboard/StatCard';
 import CallPerformanceChart from '@/components/dashboard/CallPerformanceChart';
 import RecentCallsTable from '@/components/dashboard/RecentCallsTable';
-import AgentStatus from '@/components/voice-agents/AgentStatus';
-import CreateAgentModal from '@/components/voice-agents/CreateAgentModal';
+import { useVapi } from '@/contexts/VapiContext';
+import VapiConfig from '@/components/vapi/VapiConfig';
 import { toast } from '@/components/ui/use-toast';
+import { VapiStats } from '@/services/vapiService';
 
 const Dashboard = () => {
-  const [agentActive, setAgentActive] = useState(true);
-  
-  const handleToggleAgent = () => {
-    setAgentActive(!agentActive);
-    toast({
-      title: agentActive ? "Voice Agent Deactivated" : "Voice Agent Activated",
-      description: agentActive 
-        ? "Your voice agent will no longer make calls" 
-        : "Your voice agent will now start making calls to abandoned cart customers",
-      duration: 3000,
-    });
+  const { vapiService, assistantId, isConfigured } = useVapi();
+  const [stats, setStats] = useState<VapiStats | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
+
+  const fetchStats = async () => {
+    if (!vapiService || !assistantId) return;
+    
+    setIsLoading(true);
+    try {
+      const statsData = await vapiService.getStats(assistantId);
+      setStats(statsData);
+    } catch (error) {
+      console.error('Error fetching stats:', error);
+      toast({
+        title: "Error",
+        description: "Failed to fetch dashboard statistics",
+        variant: "destructive"
+      });
+    } finally {
+      setIsLoading(false);
+    }
   };
-  
-  const handleCreateAgent = (agentData: any) => {
-    console.log('Agent created:', agentData);
-    toast({
-      title: "Voice Agent Created",
-      description: `${agentData.name} has been created successfully`,
-      duration: 3000,
-    });
-  };
+
+  useEffect(() => {
+    if (isConfigured) {
+      fetchStats();
+    }
+  }, [isConfigured, vapiService, assistantId]);
+
+  if (!isConfigured) {
+    return (
+      <div className="flex items-center justify-center min-h-[60vh]">
+        <VapiConfig />
+      </div>
+    );
+  }
+
+  if (isLoading && !stats) {
+    return (
+      <div className="flex items-center justify-center min-h-[60vh]">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
+          <p>Loading dashboard data...</p>
+        </div>
+      </div>
+    );
+  }
+
+  const todayCalls = stats?.totalCalls || 0;
+  const successRate = stats?.successRate || 0;
+  const totalRevenue = stats?.totalCost ? stats.totalCost * 10 : 0; // Assume 10x cost is revenue
+  const avgDuration = stats?.averageDuration || 0;
 
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <div>
           <h1 className="text-2xl font-bold">Dashboard</h1>
-          <p className="text-muted-foreground">Overview of your AI Voice Agent performance</p>
+          <p className="text-muted-foreground">Overview of your AI Voice Assistant performance</p>
         </div>
-        <CreateAgentModal onCreateAgent={handleCreateAgent} />
+        <Button onClick={fetchStats} disabled={isLoading}>
+          {isLoading ? 'Refreshing...' : 'Refresh Data'}
+        </Button>
       </div>
-      
-      <AgentStatus active={agentActive} onToggle={handleToggleAgent} />
       
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         <StatCard 
           title="Total Calls Today" 
-          value="143" 
+          value={todayCalls.toString()} 
           icon={<Phone size={24} />}
-          change="+12% from last week"
-          changeType="increase"
+          change={`${todayCalls} calls made`}
+          changeType="neutral"
         />
         <StatCard 
           title="Success Rate" 
-          value="78%" 
+          value={`${successRate.toFixed(1)}%`} 
           icon={<BarChart size={24} />}
-          change="+5% from last week"
-          changeType="increase"
+          change={`Based on ${todayCalls} calls`}
+          changeType={successRate > 50 ? "increase" : "decrease"}
         />
         <StatCard 
-          title="Revenue Recovered" 
-          value="$1,890" 
+          title="Revenue Generated" 
+          value={vapiService?.formatCurrency(totalRevenue) || '$0.00'} 
           icon={<DollarSign size={24} />}
-          change="+23% from last week"
+          change={`Cost: ${vapiService?.formatCurrency(stats?.totalCost || 0)}`}
           changeType="increase"
         />
         <StatCard 
           title="Avg. Call Duration" 
-          value="1:42" 
+          value={vapiService?.formatDuration(avgDuration) || '0:00'} 
           icon={<Clock size={24} />}
-          change="-8% from last week"
-          changeType="decrease"
+          change={`${Math.round(avgDuration)}s average`}
+          changeType="neutral"
         />
       </div>
       

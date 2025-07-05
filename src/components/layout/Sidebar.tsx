@@ -8,7 +8,6 @@ import {
   Clock, 
   BarChart, 
   Settings,
-  Book,
   DollarSign
 } from 'lucide-react';
 
@@ -30,11 +29,6 @@ const Sidebar = () => {
       name: 'Call Logs',
       icon: <Clock size={20} />,
       href: '/call-logs',
-    },
-    {
-      name: 'Knowledge Base',
-      icon: <Book size={20} />,
-      href: '/knowledge-base',
     },
     {
       name: 'Analytics',
@@ -83,7 +77,7 @@ const Sidebar = () => {
       <div className="p-4 border-t border-gray-200 mt-auto">
         <div className="bg-gray-50 p-3 rounded-md">
           <div className="flex items-center">
-            <span className="text-gray-600 flex-1 text-sm">Shopify Store</span>
+            <span className="text-gray-600 flex-1 text-sm">Vapi Assistant</span>
             <span className="inline-flex items-center rounded-full bg-green-100 px-2 py-1 text-xs font-medium text-green-700">Connected</span>
           </div>
         </div>
