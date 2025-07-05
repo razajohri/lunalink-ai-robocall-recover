@@ -14,19 +14,32 @@ const Dashboard = () => {
   const { vapiService, assistantId, isConfigured } = useVapi();
   const [stats, setStats] = useState<VapiStats | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
 
   const fetchStats = async () => {
-    if (!vapiService || !assistantId) return;
+    if (!vapiService || !assistantId) {
+      console.log('VapiService or assistantId not available');
+      return;
+    }
     
     setIsLoading(true);
+    console.log('Starting to fetch stats...');
+    
     try {
       const statsData = await vapiService.getStats(assistantId);
+      console.log('Stats fetched successfully:', statsData);
       setStats(statsData);
+      setLastUpdated(new Date());
+      
+      toast({
+        title: "Data Updated",
+        description: `Loaded ${statsData.totalCalls} calls successfully`,
+      });
     } catch (error) {
       console.error('Error fetching stats:', error);
       toast({
         title: "Error",
-        description: "Failed to fetch dashboard statistics",
+        description: "Failed to fetch dashboard statistics. Please check your API credentials.",
         variant: "destructive"
       });
     } finally {
@@ -36,6 +49,7 @@ const Dashboard = () => {
 
   useEffect(() => {
     if (isConfigured) {
+      console.log('Dashboard configured, fetching stats...');
       fetchStats();
     }
   }, [isConfigured, vapiService, assistantId]);
@@ -54,6 +68,7 @@ const Dashboard = () => {
         <div className="text-center">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
           <p>Loading dashboard data...</p>
+          <p className="text-sm text-muted-foreground mt-2">This may take a moment...</p>
         </div>
       </div>
     );
@@ -61,8 +76,9 @@ const Dashboard = () => {
 
   const todayCalls = stats?.totalCalls || 0;
   const successRate = stats?.successRate || 0;
-  const totalRevenue = stats?.totalCost ? stats.totalCost * 10 : 0; // Assume 10x cost is revenue
+  const totalCost = stats?.totalCost || 0;
   const avgDuration = stats?.averageDuration || 0;
+  const avgCost = stats?.averageCost || 0;
 
   return (
     <div className="space-y-6">
@@ -70,6 +86,11 @@ const Dashboard = () => {
         <div>
           <h1 className="text-2xl font-bold">Dashboard</h1>
           <p className="text-muted-foreground">Overview of your AI Voice Assistant performance</p>
+          {lastUpdated && (
+            <p className="text-xs text-muted-foreground mt-1">
+              Last updated: {lastUpdated.toLocaleTimeString()}
+            </p>
+          )}
         </div>
         <Button onClick={fetchStats} disabled={isLoading}>
           {isLoading ? 'Refreshing...' : 'Refresh Data'}
@@ -78,10 +99,10 @@ const Dashboard = () => {
       
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         <StatCard 
-          title="Total Calls Today" 
+          title="Total Calls" 
           value={todayCalls.toString()} 
           icon={<Phone size={24} />}
-          change={`${todayCalls} calls made`}
+          change={`${todayCalls} calls total`}
           changeType="neutral"
         />
         <StatCard 
@@ -92,11 +113,11 @@ const Dashboard = () => {
           changeType={successRate > 50 ? "increase" : "decrease"}
         />
         <StatCard 
-          title="Revenue Generated" 
-          value={vapiService?.formatCurrency(totalRevenue) || '$0.00'} 
+          title="Total Cost" 
+          value={vapiService?.formatCurrency(totalCost) || '$0.00'} 
           icon={<DollarSign size={24} />}
-          change={`Cost: ${vapiService?.formatCurrency(stats?.totalCost || 0)}`}
-          changeType="increase"
+          change={`Avg: ${vapiService?.formatCurrency(avgCost) || '$0.00'} per call`}
+          changeType="neutral"
         />
         <StatCard 
           title="Avg. Call Duration" 
